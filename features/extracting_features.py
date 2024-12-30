@@ -8,7 +8,7 @@ import json
 
 # The program gets all the features we want to use as data 
 # to train and test the models from the MIDI file. 
-# The progam writes the data to the output file as json
+# The progam writes the data to the output file as JSON
 
 
 # Tempo
@@ -47,7 +47,6 @@ def rubato (midi_stream):
 # Pitches 
 def get_pitches (midi_stream):
     return [note.pitches for note in midi_stream.flatten().notes]
-# print(midi_stream.flatten().notes[0])
 
 # the average number of pithes at the same time:
 # this value will show us if there are many notes played
@@ -85,7 +84,11 @@ def pitches_normalized(filename):
 def instruments(midi_stream, filename):
     instrums = []
     for part in midi_stream.parts:
-        part_instruments = part.getElementsByClass(instrument.Instrument)
+        try:
+            part_instruments = part.getElementsByClass(instrument.Instrument)
+        except Exception as e:
+            print("Exception: ", e)
+            part_instruments = []
         if len(part_instruments) > 0:
             for inst in part_instruments:
                 instrums.append((inst.instrumentName))
@@ -95,19 +98,34 @@ def instruments(midi_stream, filename):
             for element in first_measure.flatten():
                 if isinstance(element, instrument.Instrument):
                     instrums.append((element.instrumentName))
-            # part_instruments = first_measure.getElementsByClass(instrument.Instrument)
-            # if part_instruments:  # Jeśli znaleziono instrumenty
-            #     for inst in part_instruments:
-            #         instruments.append((inst.instrumentName, inst.program))
+
+    # if no instruments were found
     if len(instrums) == 0:
-        print("Nie znaleziono instrumentów w pliku ", filename)
-    else: 
-        print("all good")
+        print('-------------------------------------')
+        print(f"No instruments found (file: {filename})")
+        print('-------------------------------------')
+    return instrums
 
 
 # Key signature
-def key_signature(midi_stream):
-    key_sig = midi_stream.analyze('key')
+def key_signature(midi_stream, filename):
+    # since all parts should have the same key we will look for it
+    # in the first part in the first measure
+    key_sig = None
+    part = midi_stream.parts[0]
+    first_measure = part.measures(0, 1)
+    for element in first_measure.flatten():
+        if isinstance(element, key.Key):
+            key_sig = element
+
+    # if the key is not written in the part or first measure we will 
+    # "estimate" it using analyze() function from music21 module
+    if key_sig == None:
+        key_sig = midi_stream.analyze('key')
+        print('-------------------------------------')
+        print(f"Key estimathed, not found (file = {filename})")
+        print('-------------------------------------')
+
     # sharps - gives us a number of # or b which combined with the fact
     # if the key is dur or moll (major/minor) defines the original key 
     # signature and we can easly represent it by numbers
@@ -135,28 +153,43 @@ def dynamics(midi_stream):
 
 
 # get all the information to a dictionary
-def prepare_dict(midi_stream, filename):
+def prepare_dict(filename):
+    # to parse midi file music21 parser is being used
+    midi_stream = converter.parse(filename)
+
     data = {}
+    # print("Processing ", filename)
+    # midi_stream.show('text')
     data["average_tempo"] = average_tempo(midi_stream)
-    data["rubato"] = rubato(midi_stream)   
-    data["pitches"], data["average_of_pitches"] = pitches_and_number_of_pitches_average(midi_stream)
+    data["rubato"] = rubato(midi_stream)
+    data["pitches"], data["average_of_pitches"] = pitches_and_number_of_pitches_average(midi_stream) # TODO:
+        # the average of peaches should represent poliphony so it needs to 
+        # be across all instruments
     data["pitches_normalized"] = pitches_normalized(filename)
-    data["instruments"] = instruments(midi_stream, filename)
-    data["key_signature"] = key_signature(midi_stream)
+    data["instruments"] = instruments(midi_stream, filename) # TODO  - remove duplicates
+    data["key_signature"] = key_signature(midi_stream, filename) 
     data["note_durations"] = duration_of_notes(midi_stream)
     data["velocities"] = dynamics(midi_stream)
+
     return data
 
 
 
 # run the program
-# filename = input()
-filename = 'features/chp_op18.mid'
+
+# the program takes as an argument a midi file
+import sys
+if len(sys.argv) == 1: # the first argument is always name of the python file
+    filename = 'features/chp_op18.mid'
+else:
+    filename = sys.argv[1]
+
+# the output file has the same name but .json instead of .mid
 output_file = (filename[0:-4])+'.json'
 
-midi_stream = converter.parse(filename)
 
-data = prepare_dict(midi_stream, filename)
+# getting the interesting features from midi
+data = prepare_dict(filename)
 
 # write the JSON to a specific file
 with open(output_file, 'w') as fd:
