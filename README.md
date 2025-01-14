@@ -7,7 +7,6 @@ We found 2 datasets containing MIDI files divided by composers. We decided to us
 * Bach
 * Brahms
 * Haendel
-* Mendelssohn
 * Schubert
 * Vivaldi
 * Beethoven
