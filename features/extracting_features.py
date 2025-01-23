@@ -1,7 +1,7 @@
-from music21 import converter, stream, chord, tempo, key, instrument, note
+from music21 import converter, stream, tempo, key, note
 import numpy as np
-# import pretty_midi
 import json
+import mido
 
 
 
@@ -53,8 +53,6 @@ def rubato (midi_stream):
 # * average pitch
 # * ... TODO
 def pitches_normalized(filename):
-    import mido
-    
     midi_data = mido.MidiFile(filename)
 
     # how many notes of each pitch
@@ -75,54 +73,52 @@ def pitches_normalized(filename):
         "average_pitch": avg_pitch
     }
 
-# Instruments
-# Since many different instruments can be in the music piece
-# we will count how many of common orchestral instruments are
-# and the number of instruments total
-def instruments(midi_stream, filename):
 
-    common_instruments = ["Piano", "Flute", "Bassoon", "Double bass", "Clarinet", "Trumpet", "French horn", "Violin", "Cello", "Harp", "Oboe", "Tuba", "Viola", "Piccolo", "Trombone", "Saxophone", "English Horn", "Harpsichord"]
+# Instruments
+def instruments(midi_stream, filename):
     
-    # we will use a dictionary with all the instruments
-    found_instruments = {}
-    for inst in common_instruments:
-        found_instruments[inst] = 0
+    # we will use a list with histogram of all the instruments
+    found_instruments = [0]*128
 
     number_of_instruments = 0
 
-    # getting instruments from each part
-    for part in midi_stream.parts:
-        try:
-            part_instruments = part.getElementsByClass(instrument.Instrument)
-        except Exception as e:
-            print("Exception: ", e)
-            part_instruments = []
-        if len(part_instruments) > 0:
-            all_instruments = part_instruments
-        else:
-            first_measure = part.measures(0, 1)
-            all_instruments = filter((lambda x : isinstance(x, instrument.Instrument) ), first_measure.flatten())
-
-        # for each instrument we see where does it fir
-        # since sometimes we have more than 1 instrumets of each kind
-        # they are mostly named Instrument 1, ... so we will check if the 
-        # name of the instrument is contained in what we find:
-        for inst in all_instruments:
-            number_of_instruments += 1
-            for com_inst in common_instruments:
-                if com_inst in str(inst):
-                    found_instruments[com_inst] += 1
-
-        # just found instruments will not be enought since it
-        # might happen that the MIDI has an instrument out of
-        # out dataset (it should not happen often)   
-        # 
-        # for a machine learning model the names will not be needed
-        # so instead of a dictionary we can just use a list:     
-        return {
-            "number_of_instruments": number_of_instruments,
-            "types_of_instruments": [found_instruments[x] for x in common_instruments]
-        }
+    # midi_stream.show('text')
+    # problems = False
+    # err = ""
+    all_instruments = midi_stream.getInstruments()
+    # instruments have a Program value that is in range 0-127 and
+    # each value corresponds to a different instrument in MIDI.
+    # Since our model will not need the names of instruments the values
+    # will be enought, that is why we will use "histogram" of instruments - 
+    # the model will get a vector of ints that say how many instruments with that program 
+    # are in the music piece
+    for inst in all_instruments:
+        # inst.show('text')
+        # print(inst.midiProgram)
+        # print(inst.id)
+        # print()
+        if inst.midiProgram == None:
+            # inst.show('text')
+            # err += str(inst) + "ma None....." + "\n"
+            # print(f"Ten instrument: '{inst}' ma midiProgram None ....")
+            # problems = True
+            continue
+        
+        number_of_instruments += 1
+        found_instruments[inst.midiProgram] += 1  
+    
+    # print(found_instruments)
+    # if problems and number_of_instruments < 3:
+    #     print("Problemy w pliku:", filename)
+    #     print(err)
+    #     print(number_of_instruments)
+    #     print()
+    #     print()
+    
+    return {
+        "number_of_instruments": number_of_instruments,            
+        "instruments_histogram": found_instruments
+    }
 
 
 # Key signature
@@ -184,7 +180,19 @@ def duration_of_notes(midi_stream):
     
     for element in midi_stream.flatten().notes:
         if isinstance(element, note.Note):
-            ord = note_dur_options[str(element.duration.ordinal)]
+            try:
+                ord = note_dur_options[str(element.duration.ordinal)]
+            except Exception as e:
+                # the exception could happen for notes longer than 32 quarter notes
+                # if the exception is for a notes shorter than that is gets printed
+                # and the program exits
+                if(element.duration.quarterLength < 32):
+                    print(e)
+                    print("Problem with note:")
+                    print(element.duration.quarterLength)
+                    exit()
+                # print(element.duration.quarterLength)
+                ord = note_dur_options['inexpressible']
             note_dur_hist[ord] += 1
     return {
         "average_note_duration": avg_note_dur,
@@ -218,7 +226,7 @@ def prepare_data(filename):
     midi_stream = converter.parse(filename)
 
     data = {}
-    print("Processing ", filename)
+    # print("Processing ", filename)
     # midi_stream.show('text')
     data["average_tempo"] = average_tempo(midi_stream)
     data["rubato"] = rubato(midi_stream)
