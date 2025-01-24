@@ -48,10 +48,9 @@ def rubato (midi_stream):
 # normalized pitches: (with mido)
 # We do not want all the pitches (it is a lot of data and
 # we cannot use that since every piece has different amount
-# of pitvhes). We want some more standarized info:
+# of pitvhes). We need some more standarized info:
 # * how many notes of each piece are (the pitches are 0 - 127)
 # * average pitch
-# * ... TODO
 def pitches_normalized(filename):
     midi_data = mido.MidiFile(filename)
 
@@ -75,61 +74,46 @@ def pitches_normalized(filename):
 
 
 # Instruments
-def instruments(midi_stream, filename):
-    
-    # we will use a list with histogram of all the instruments
-    found_instruments = [0]*128
-
-    number_of_instruments = 0
-
-    # midi_stream.show('text')
-    # problems = False
-    # err = ""
-    all_instruments = midi_stream.getInstruments()
+def instruments(midi_stream):
     # instruments have a Program value that is in range 0-127 and
     # each value corresponds to a different instrument in MIDI.
     # Since our model will not need the names of instruments the values
     # will be enought, that is why we will use "histogram" of instruments - 
-    # the model will get a vector of ints that say how many instruments with that program 
-    # are in the music piece
+    # the model will get a vector of ones and zeroes that tell if there is 
+    # an instrument with a specific program in a music piece
+    
+    found_instruments = [0]*128
+    all_instruments = midi_stream.getInstruments()
+
     for inst in all_instruments:
-        # inst.show('text')
-        # print(inst.midiProgram)
-        # print(inst.id)
-        # print()
+        
         if inst.midiProgram == None:
-            # inst.show('text')
-            # err += str(inst) + "ma None....." + "\n"
-            # print(f"Ten instrument: '{inst}' ma midiProgram None ....")
-            # problems = True
+            # sometimes instead of instruments other things as title
+            # get labeled as instruments but then there are no programs
+            # for that instruments. Since we made sure not to include
+            # MIDI files with not-working instruments in our database 
+            # we can safely ignore theese "instruments"
+            
+            # if you are using this code on your own dataset I reccomend
+            # adding some extra information if there are instruments without
+            # the program - there might be an issue with MIDI file and therefore
+            # the instruments might not be extracted correctly
             continue
         
-        number_of_instruments += 1
-        found_instruments[inst.midiProgram] += 1  
+        found_instruments[inst.midiProgram] = 1  
     
-    # print(found_instruments)
-    # if problems and number_of_instruments < 3:
-    #     print("Problemy w pliku:", filename)
-    #     print(err)
-    #     print(number_of_instruments)
-    #     print()
-    #     print()
-    
-    return {
-        "number_of_instruments": number_of_instruments,            
-        "instruments_histogram": [0 if x == 0 else 1 for x in found_instruments]
+    return {           
+        "instruments_histogram": found_instruments
     }
 
 
 # Key signature
-def key_signature(midi_stream, filename):
+def key_signature(midi_stream):
     # since all parts should have the same key we will look for it
     # in the first part in the first measure
-    # midi_stream.show('text')
     key_sig = None
     part = midi_stream.parts[0]
     first_measure = part.measures(0, 1)
-    # first_measure.show('text')
     for element in first_measure.flatten():
         if isinstance(element, key.Key):
             key_sig = element
@@ -137,7 +121,6 @@ def key_signature(midi_stream, filename):
 
     # if the key is not written in the part or first measure we 
     # should try in other parts:
-    
     if key_sig == None:
         for part in midi_stream.parts[0:]:
             first_measure = part.measures(0, 1)
@@ -148,10 +131,12 @@ def key_signature(midi_stream, filename):
 
     # if the key is still not found: the program  
     # "estimates" it using analyze() function from music21 module
+    # we made sure not to include files without the key in the dataset
+    # but for any different dataset it might be helpfull
     if key_sig == None:
         key_sig = midi_stream.analyze('key')
         # print('-------------------------------------')
-        # print(f"Key estimathed, not found (file = {filename})")
+        # print(f"Key estimathed - not found")
         # print('-------------------------------------')
 
     # sharps - gives us a number of # or b which combined with the fact
@@ -175,7 +160,9 @@ def duration_of_notes(midi_stream):
     avg_note_dur = sum(note_durations)/len(note_durations)
 
     # for a note durations histogram it is better to use .ordinal
-    note_dur_options = {"0": 0, "1": 1, "2":2, "3":3, "4":4, "5":5, "6":6, "7":7, "8":8, "9":9, "10":10, 'complex':11, "inexpressible":12}
+    note_dur_options = {"0": 0, "1": 1, "2":2, "3":3, "4":4, "5":5, 
+                        "6":6, "7":7, "8":8, "9":9, "10":10, 
+                        'complex':11, "inexpressible":12}
     note_dur_hist = [0 for _ in range(len(note_dur_options))]
     
     for element in midi_stream.flatten().notes:
@@ -191,7 +178,6 @@ def duration_of_notes(midi_stream):
                     print("Problem with note:")
                     print(element.duration.quarterLength)
                     exit()
-                # print(element.duration.quarterLength)
                 ord = note_dur_options['inexpressible']
             note_dur_hist[ord] += 1
     return {
@@ -224,15 +210,14 @@ def dynamics(midi_stream):
 def prepare_data(filename):
     # to parse midi file music21 parser is being used
     midi_stream = converter.parse(filename)
-
+    
+    # extraction of all features and 
     data = {}
-    # print("Processing ", filename)
-    # midi_stream.show('text')
     data["average_tempo"] = average_tempo(midi_stream)
     data["rubato"] = rubato(midi_stream)
     data["pitches_normalized"] = pitches_normalized(filename)
-    data["instruments"] = instruments(midi_stream, filename)
-    data["key_signature"] = key_signature(midi_stream, filename) 
+    data["instruments"] = instruments(midi_stream)
+    data["key_signature"] = key_signature(midi_stream) 
     data["note_durations"] = duration_of_notes(midi_stream)
     data["velocities"] = dynamics(midi_stream)
     return data
