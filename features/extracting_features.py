@@ -117,7 +117,7 @@ def instruments(midi_stream, filename):
     
     return {
         "number_of_instruments": number_of_instruments,            
-        "instruments_histogram": found_instruments
+        "instruments_histogram": [0 if x == 0 else 1 for x in found_instruments]
     }
 
 
