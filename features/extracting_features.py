@@ -102,9 +102,7 @@ def instruments(midi_stream):
         
         found_instruments[inst.midiProgram] = 1  
     
-    return {           
-        "instruments_histogram": found_instruments
-    }
+    return found_instruments
 
 
 # Key signature
