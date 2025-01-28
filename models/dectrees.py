@@ -27,7 +27,7 @@ class DecTrees(BaseModel):
             Why it matters
                 Higher values: Forces leaf nodes to represent a larger portion of the data, leading to a simpler and more generalized tree.
                 Lower values: Allows leaf nodes with fewer samples, increasing the risk of overfitting.
-    Calculates: X_train, X_test, Y_train, Y_test, model
+    Calculates: model
     '''
     def fit(self, max_depth=None, min_samples_split=2, min_samples_leaf=1):
         self.model = DecisionTreeClassifier(max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf, random_state=42)
