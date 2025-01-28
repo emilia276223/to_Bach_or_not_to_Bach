@@ -60,7 +60,7 @@ class GradBoostMachines(BaseModel):
                 Larger Learning Rate:
                 Faster convergence: Larger values allow the model to converge more quickly, but this can lead to overfitting as the model may become too aggressive in adapting to the training data.
                 Risk of underfitting: If the learning rate is too high, the model might skip over optimal solutions, leading to poor performance.
-    Calculates: X_train, X_test, Y_train, Y_test, model
+    Calculates: model
     '''
     def fit(self, max_depth=None, min_samples_split=2, min_samples_leaf=1, n_estimators=200, learning_rate=0.1):
         self.model = GradientBoostingClassifier(n_estimators=n_estimators, max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf, learning_rate=learning_rate, random_state=42)
