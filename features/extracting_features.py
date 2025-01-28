@@ -48,8 +48,8 @@ def rubato (midi_stream):
 # normalized pitches: (with mido)
 # We do not want all the pitches (it is a lot of data and
 # we cannot use that since every piece has different amount
-# of pitvhes). We need some more standarized info:
-# * how many notes of each piece are (the pitches are 0 - 127)
+# of pitches). We need some more standarized info:
+# * how many notes of each piece are there (the pitches are 0 - 127)
 # * average pitch
 def pitches_normalized(filename):
     midi_data = mido.MidiFile(filename)
@@ -94,7 +94,7 @@ def instruments(midi_stream):
             # MIDI files with not-working instruments in our database 
             # we can safely ignore theese "instruments"
             
-            # if you are using this code on your own dataset I reccomend
+            # if you are using this code on your own dataset I recommend
             # adding some extra information if there are instruments without
             # the program - there might be an issue with MIDI file and therefore
             # the instruments might not be extracted correctly
@@ -148,7 +148,7 @@ def key_signature(midi_stream):
 # we do not want all the notes so we will get some more
 # standarized data such as:
 # * average note duration
-# * count of all possible durations (the shortest possible is )
+# * count of all possible durations (the shortest possible is 10)
 def duration_of_notes(midi_stream):
     note_durations = []
     for element in midi_stream.flatten().notes:
@@ -209,7 +209,7 @@ def prepare_data(filename):
     # to parse midi file music21 parser is being used
     midi_stream = converter.parse(filename)
     
-    # extraction of all features and 
+    # extraction of all features:
     data = {}
     data["average_tempo"] = average_tempo(midi_stream)
     data["rubato"] = rubato(midi_stream)
