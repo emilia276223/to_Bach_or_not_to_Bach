@@ -1,5 +1,7 @@
 from sklearn.tree import DecisionTreeClassifier
 
+from models.base_model import BaseModel
+
 class DecTrees(BaseModel):
     '''
     Takes:

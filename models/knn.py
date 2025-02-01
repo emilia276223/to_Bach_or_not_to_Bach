@@ -1,5 +1,7 @@
 from sklearn.neighbors import KNeighborsClassifier
 
+from models.base_model import BaseModel
+
 class KNN(BaseModel):
     '''
     Takes:

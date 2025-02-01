@@ -1,6 +1,8 @@
 from sklearn.linear_model import LogisticRegression
 from sklearn.multiclass import OneVsOneClassifier
 
+from models.base_model import BaseModel
+
 class LogReg(BaseModel):
     '''
         ovo - False for 1 vs rest, True for 1 vs 1

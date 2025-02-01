@@ -61,11 +61,11 @@ class DataSet:
                         value[1] = 0
 
                 if isinstance(value, dict):   # nested dict
-                for inkey, invalue in value.items():
-                    tmp_current_name = current_name + "." + inkey
-                    np_input = np.append(np_input, invalue)
-                    if not self.features_done:
-                    self.features_names = np.append(self.features_names, tmp_current_name)
+                    for inkey, invalue in value.items():
+                        tmp_current_name = current_name + "." + inkey
+                        np_input = np.append(np_input, invalue)
+                        if not self.features_done:
+                            self.features_names = np.append(self.features_names, tmp_current_name)
                 else:   # single element or list
                     np_input = np.append(np_input, value)
                     if not self.features_done:

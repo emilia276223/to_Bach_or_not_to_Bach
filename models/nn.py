@@ -6,6 +6,8 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.regularizers import l1_l2
 
+from models.base_model import BaseModel
+
 class NeuralNetwork(BaseModel):
     def fit(self):
         Y_train = to_categorical(self.Y_train, num_classes=10)

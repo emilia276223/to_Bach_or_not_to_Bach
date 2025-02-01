@@ -1,5 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
 
+from models.base_model import BaseModel
+
 class RandForests(BaseModel):
     '''
     Takes:

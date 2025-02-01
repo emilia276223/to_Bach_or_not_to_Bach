@@ -1,5 +1,7 @@
 from sklearn.ensemble import GradientBoostingClassifier
 
+from models.base_model import BaseModel
+
 class GradBoostMachines(BaseModel):
     '''
     Takes:
