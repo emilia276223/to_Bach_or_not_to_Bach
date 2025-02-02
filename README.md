@@ -1,12 +1,12 @@
-# to_Bach_or_not_to_Bach
+# To Bach or not to Bach
 Classification of music pieces based on the MIDI files
 
 ## Data
 
-We found 2 datasets containing MIDI files divided by composers. We decided to use the MIDI files from both datasets, but for the chosen composers:
+We found a few datasets containing MIDI files divided by composers. We decided to use the MIDI files for the chosen composers:
 * Bach
 * Brahms
-* Haendel
+* Händel
 * Schubert
 * Vivaldi
 * Beethoven
@@ -15,8 +15,14 @@ We found 2 datasets containing MIDI files divided by composers. We decided to us
 * Mozart
 * Schumann
 
-We extract features from the MIDI files that seem useful for composer recognition. We will use these features to train and test the model.
+We extracted features from the MIDI files that seem useful for composer recognition. We used these features to train and test the model. 
 
 ## Goal
 
 The goal is to teach chosen models to classify the music (by features) to its composer.
+
+## Result
+
+You can find our final code here, along with the final presentation (results, plots, diagrams and some nice memes).
+
+
